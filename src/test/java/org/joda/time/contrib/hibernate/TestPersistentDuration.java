@@ -17,14 +17,15 @@ package org.joda.time.contrib.hibernate;
 
 import junit.framework.Assert;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.Period;
 import org.joda.time.contrib.hibernate.testmodel.SomethingThatLasts;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -43,6 +44,7 @@ public class TestPersistentDuration extends HibernateTestCase {
 
     public void testSimpleStore() throws SQLException, IOException {
         Session session = getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
 
         for (int i = 0; i < durations.length; i++) {
             SomethingThatLasts thing = new SomethingThatLasts();
@@ -53,7 +55,7 @@ public class TestPersistentDuration extends HibernateTestCase {
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
         for (int i = 0; i < durations.length; i++) {

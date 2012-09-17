@@ -15,30 +15,29 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.YearMonthDay;
 
-public class TestPersistentYearMonthDay extends HibernateTestCase
-{
-    private YearMonthDay[] writeReadTimes = new YearMonthDay[]
-    {
-        new YearMonthDay(2004, 2, 25),
-        new YearMonthDay(1980, 3, 11)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentYearMonthDay extends HibernateTestCase {
+    private YearMonthDay[] writeReadTimes = new YearMonthDay[]
+            {
+                    new YearMonthDay(2004, 2, 25),
+                    new YearMonthDay(1980, 3, 11)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             YearMonthDay writeReadTime = writeReadTimes[i];
 
             Schedule event = new Schedule();
@@ -49,11 +48,10 @@ public class TestPersistentYearMonthDay extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             YearMonthDay writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
@@ -64,12 +62,11 @@ public class TestPersistentYearMonthDay extends HibernateTestCase
 
             assertEquals("get failed - returned different date", writeReadTime, eventReread.getStartDate());
         }
-        
+
         session.close();
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/schedule.hbm.xml"));
     }
 }

@@ -15,30 +15,30 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.DateTime;
 
-public class TestPersistentDateTimeAsBigInt extends HibernateTestCase
-{
-    private DateTime[] writeReadTimes = new DateTime[]
-    {
-        new DateTime(0),
-        new DateTime(1000),
-        new DateTime(1000000)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentDateTimeAsBigInt extends HibernateTestCase {
+    private DateTime[] writeReadTimes = new DateTime[]
+            {
+                    new DateTime(0),
+                    new DateTime(1000),
+                    new DateTime(1000000)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             DateTime writeReadTime = writeReadTimes[i];
 
             ThingWithDateTime thing = new ThingWithDateTime();
@@ -49,22 +49,20 @@ public class TestPersistentDateTimeAsBigInt extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             DateTime writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
-            ThingWithDateTime thingReread = (ThingWithDateTime)session.get(ThingWithDateTime.class, new Integer(i));
+            ThingWithDateTime thingReread = (ThingWithDateTime) session.get(ThingWithDateTime.class, new Integer(i));
 
             assertNotNull("get failed - thing#'" + i + "'not found", thingReread);
             assertNotNull("get failed - returned null", thingReread.getDateTime());
 
             DateTime reReadTime = thingReread.getDateTime();
-            if (writeReadTime.getMillis() != reReadTime.getMillis())
-            {
+            if (writeReadTime.getMillis() != reReadTime.getMillis()) {
                 fail("get failed - returned different date. expected " + writeReadTime + " was " + thingReread.getDateTime());
             }
         }
@@ -72,8 +70,7 @@ public class TestPersistentDateTimeAsBigInt extends HibernateTestCase
         session.close();
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/thingWithDateTimeAsBigInt.hbm.xml"));
     }
 }

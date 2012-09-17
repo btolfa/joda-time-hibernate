@@ -15,30 +15,29 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.LocalDate;
 
-public class TestPersistentLocalDate extends HibernateTestCase
-{
-    private LocalDate[] writeReadTimes = new LocalDate[]
-    {
-        new LocalDate(2004, 2, 25),
-        new LocalDate(1980, 3, 11)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentLocalDate extends HibernateTestCase {
+    private LocalDate[] writeReadTimes = new LocalDate[]
+            {
+                    new LocalDate(2004, 2, 25),
+                    new LocalDate(1980, 3, 11)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             LocalDate writeReadTime = writeReadTimes[i];
 
             Event event = new Event();
@@ -49,11 +48,10 @@ public class TestPersistentLocalDate extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             LocalDate writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
@@ -64,15 +62,14 @@ public class TestPersistentLocalDate extends HibernateTestCase
 
             // we loose the timezone, so we have to normalize both to offset=0
             assertEquals("get failed - returned different time",
-                writeReadTime,
-                eventReread.getLocalDate());
+                    writeReadTime,
+                    eventReread.getLocalDate());
 
             session.close();
         }
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/event.hbm.xml"));
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/eventTZ.hbm.xml"));
     }

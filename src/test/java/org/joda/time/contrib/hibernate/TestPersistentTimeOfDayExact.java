@@ -15,30 +15,29 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.TimeOfDay;
 
-public class TestPersistentTimeOfDayExact extends HibernateTestCase
-{
-    private TimeOfDay[] writeReadTimes = new TimeOfDay[]
-    {
-        new TimeOfDay(12, 10, 31),
-        new TimeOfDay(23,  7, 43, 120)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentTimeOfDayExact extends HibernateTestCase {
+    private TimeOfDay[] writeReadTimes = new TimeOfDay[]
+            {
+                    new TimeOfDay(12, 10, 31),
+                    new TimeOfDay(23, 7, 43, 120)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             TimeOfDay writeReadTime = writeReadTimes[i];
 
             Schedule event = new Schedule();
@@ -49,11 +48,10 @@ public class TestPersistentTimeOfDayExact extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             TimeOfDay writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
@@ -68,8 +66,7 @@ public class TestPersistentTimeOfDayExact extends HibernateTestCase
         session.close();
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/schedule.hbm.xml"));
     }
 }

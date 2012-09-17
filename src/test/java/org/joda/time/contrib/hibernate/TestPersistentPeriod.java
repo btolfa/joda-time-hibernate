@@ -17,12 +17,13 @@ package org.joda.time.contrib.hibernate;
 
 import junit.framework.Assert;
 import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.Period;
 import org.joda.time.contrib.hibernate.testmodel.SomethingThatHappens;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -48,6 +49,7 @@ public class TestPersistentPeriod extends HibernateTestCase {
 
     public void testSimpleStore() throws SQLException, IOException {
         Session session = getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
 
         for (int i = 0; i < periods.length; i++) {
             SomethingThatHappens thing = new SomethingThatHappens();
@@ -58,7 +60,7 @@ public class TestPersistentPeriod extends HibernateTestCase {
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
         for (int i = 0; i < periods.length; i++) {

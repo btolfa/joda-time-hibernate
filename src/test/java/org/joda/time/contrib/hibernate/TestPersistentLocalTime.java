@@ -15,32 +15,31 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.LocalTime;
 
-public class TestPersistentLocalTime extends HibernateTestCase
-{
-    private LocalTime[] writeReadTimes = new LocalTime[]
-    {
-        new LocalTime(14, 2, 25),
-        new LocalTime(23, 59, 59, 999),
-        new LocalTime(0, 0, 0),
-        new LocalTime(12, 02, 15)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentLocalTime extends HibernateTestCase {
+    private LocalTime[] writeReadTimes = new LocalTime[]
+            {
+                    new LocalTime(14, 2, 25),
+                    new LocalTime(23, 59, 59, 999),
+                    new LocalTime(0, 0, 0),
+                    new LocalTime(12, 02, 15)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             LocalTime writeReadTime = writeReadTimes[i];
 
             Event event = new Event();
@@ -54,11 +53,10 @@ public class TestPersistentLocalTime extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             LocalTime writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
@@ -72,17 +70,17 @@ public class TestPersistentLocalTime extends HibernateTestCase
 
             // we might loose the millis, depends on database
             assertEquals("get failed - returned different time (TIME)",
-                writeReadTime.getMillisOfDay()/1000,
-                eventReread.getLocalTime().getMillisOfDay()/1000);
+                    writeReadTime.getMillisOfDay() / 1000,
+                    eventReread.getLocalTime().getMillisOfDay() / 1000);
 
             assertEquals("get failed - returned different time (INT)",
-                writeReadTime.getMillisOfDay(),
-                eventReread.getLocalTime2().getMillisOfDay());
+                    writeReadTime.getMillisOfDay(),
+                    eventReread.getLocalTime2().getMillisOfDay());
 
             assertEquals("get failed - returned different time (STRING)",
-                writeReadTime.getMillisOfDay(),
-                eventReread.getLocalTime3().getMillisOfDay());
-            
+                    writeReadTime.getMillisOfDay(),
+                    eventReread.getLocalTime3().getMillisOfDay());
+
             assertEquals("get failed - returned different time (TIMESTAMP)",
                     writeReadTime.getMillisOfDay(),
                     eventReread.getLocalTime4().getMillisOfDay());
@@ -91,8 +89,7 @@ public class TestPersistentLocalTime extends HibernateTestCase
         }
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/event.hbm.xml"));
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/eventTZ.hbm.xml"));
     }

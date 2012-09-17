@@ -15,31 +15,30 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.File;
-import java.sql.SQLException;
-
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.joda.time.Instant;
 
-public class TestPersistentInstant extends HibernateTestCase
-{
-    private Instant[] writeReadTimes = new Instant[]
-    {
-        new Instant(0),
-        new Instant(1000),
-        new Instant(1000000)
-    };
+import java.io.File;
+import java.sql.SQLException;
 
-    public void testSimpleStore() throws SQLException
-    {
+public class TestPersistentInstant extends HibernateTestCase {
+    private Instant[] writeReadTimes = new Instant[]
+            {
+                    new Instant(0),
+                    new Instant(1000),
+                    new Instant(1000000)
+            };
+
+    public void testSimpleStore() throws SQLException {
         SessionFactory factory = getSessionFactory();
 
         Session session = factory.openSession();
+        Transaction tx = session.beginTransaction();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             Instant writeReadTime = writeReadTimes[i];
 
             ThingWithInstant thing = new ThingWithInstant();
@@ -50,22 +49,20 @@ public class TestPersistentInstant extends HibernateTestCase
         }
 
         session.flush();
-        session.connection().commit();
+        tx.commit();
         session.close();
 
-        for (int i = 0; i<writeReadTimes.length; i++)
-        {
+        for (int i = 0; i < writeReadTimes.length; i++) {
             Instant writeReadTime = writeReadTimes[i];
 
             session = factory.openSession();
-            ThingWithInstant thingReread = (ThingWithInstant)session.get(ThingWithInstant.class, new Integer(i));
+            ThingWithInstant thingReread = (ThingWithInstant) session.get(ThingWithInstant.class, new Integer(i));
 
             assertNotNull("get failed - thing#'" + i + "'not found", thingReread);
             assertNotNull("get failed - returned null", thingReread.getInstant());
 
             Instant reReadTime = thingReread.getInstant();
-            if (writeReadTime.getMillis() != reReadTime.getMillis())
-            {
+            if (writeReadTime.getMillis() != reReadTime.getMillis()) {
                 fail("get failed - returned different date. expected " + writeReadTime + " was " + thingReread.getInstant());
             }
         }
@@ -73,8 +70,7 @@ public class TestPersistentInstant extends HibernateTestCase
         session.close();
     }
 
-    protected void setupConfiguration(Configuration cfg)
-    {
+    protected void setupConfiguration(Configuration cfg) {
         cfg.addFile(new File("src/test/java/org/joda/time/contrib/hibernate/thingWithInstant.hbm.xml"));
     }
 }

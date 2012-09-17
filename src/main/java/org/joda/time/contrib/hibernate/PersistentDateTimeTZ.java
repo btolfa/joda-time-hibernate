@@ -15,29 +15,30 @@
  */
 package org.joda.time.contrib.hibernate;
 
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.type.StandardBasicTypes;
+import org.hibernate.usertype.UserType;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.HibernateException;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.usertype.UserType;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-
 /**
  * Persist {@link org.joda.time.DateTime} via hibernate. The timezone will be
  * stored in an extra column.
- * 
+ *
  * @author Mario Ivankovits (mario@ops.co.at)
  */
 public class PersistentDateTimeTZ implements UserType, Serializable {
 
     public static final PersistentDateTimeTZ INSTANCE = new PersistentDateTimeTZ();
 
-    private static final int[] SQL_TYPES = new int[] { Types.TIMESTAMP, Types.VARCHAR, };
+    private static final int[] SQL_TYPES = new int[]{Types.TIMESTAMP, Types.VARCHAR,};
 
     public int[] sqlTypes() {
         return SQL_TYPES;
@@ -63,23 +64,25 @@ public class PersistentDateTimeTZ implements UserType, Serializable {
         return object.hashCode();
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] strings, Object object) throws HibernateException, SQLException {
-        Object timestamp = StandardBasicTypes.TIMESTAMP.nullSafeGet(resultSet, strings[0]);
-        Object timezone = StandardBasicTypes.STRING.nullSafeGet(resultSet, strings[1]);
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor, Object object) throws HibernateException, SQLException {
+        Object timestamp = StandardBasicTypes.TIMESTAMP.nullSafeGet(resultSet, strings[0], sessionImplementor);
+        Object timezone = StandardBasicTypes.STRING.nullSafeGet(resultSet, strings[1], sessionImplementor);
         if (timestamp == null || timezone == null) {
             return null;
         }
         return new DateTime(timestamp, DateTimeZone.forID(timezone.toString()));
     }
 
-    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+    @Override
+    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, null, index);
-            StandardBasicTypes.STRING.nullSafeSet(preparedStatement, null, index + 1);
+            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, null, index, sessionImplementor);
+            StandardBasicTypes.STRING.nullSafeSet(preparedStatement, null, index + 1, sessionImplementor);
         } else {
             DateTime dt = (DateTime) value;
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, dt.toDate(), index);
-            StandardBasicTypes.STRING.nullSafeSet(preparedStatement, dt.getZone().getID(), index + 1);
+            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, dt.toDate(), index, sessionImplementor);
+            StandardBasicTypes.STRING.nullSafeSet(preparedStatement, dt.getZone().getID(), index + 1, sessionImplementor);
         }
     }
 

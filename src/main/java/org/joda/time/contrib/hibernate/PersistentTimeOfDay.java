@@ -15,24 +15,21 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Types;
-
 import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.usertype.EnhancedUserType;
 import org.joda.time.DateTime;
 import org.joda.time.TimeOfDay;
 
+import java.io.Serializable;
+import java.sql.*;
+
 /**
  * Persist {@link org.joda.time.TimeOfDay} via hibernate.
  * This uses java.sql.Time and the time datatype of your database.
  * Notice: You might loose the milliseconds part.
- * 
+ *
  * @author Mario Ivankovits (mario@ops.co.at)
  */
 public class PersistentTimeOfDay implements EnhancedUserType, Serializable {
@@ -41,7 +38,7 @@ public class PersistentTimeOfDay implements EnhancedUserType, Serializable {
 
     public static final PersistentTimeOfDay INSTANCE = new PersistentTimeOfDay();
 
-    private static final int[] SQL_TYPES = new int[] { Types.TIME, };
+    private static final int[] SQL_TYPES = new int[]{Types.TIME,};
 
     public int[] sqlTypes() {
         return SQL_TYPES;
@@ -67,13 +64,14 @@ public class PersistentTimeOfDay implements EnhancedUserType, Serializable {
         return object.hashCode();
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] strings, Object object) throws HibernateException, SQLException {
-        return nullSafeGet(resultSet, strings[0]);
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor, Object object) throws HibernateException, SQLException {
+        return nullSafeGet(resultSet, strings[0], sessionImplementor);
 
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String string) throws SQLException {
-        Object date = StandardBasicTypes.TIME.nullSafeGet(resultSet, string);
+    public Object nullSafeGet(ResultSet resultSet, String string, SessionImplementor sessionImplementor) throws SQLException {
+        Object date = StandardBasicTypes.TIME.nullSafeGet(resultSet, string, sessionImplementor);
         if (date == null) {
             return null;
         }
@@ -81,12 +79,13 @@ public class PersistentTimeOfDay implements EnhancedUserType, Serializable {
         return new TimeOfDay(date);
     }
 
-    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+    @Override
+    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
-            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, null, index);
+            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, null, index, sessionImplementor);
         } else {
             StandardBasicTypes.TIME.nullSafeSet(preparedStatement,
-                    new Time(((TimeOfDay) value).toDateTime(timeBase).getMillis()), index);
+                    new Time(((TimeOfDay) value).toDateTime(timeBase).getMillis()), index, sessionImplementor);
         }
     }
 

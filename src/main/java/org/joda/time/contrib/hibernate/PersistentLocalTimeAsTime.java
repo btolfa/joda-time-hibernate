@@ -15,31 +15,28 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Types;
-
 import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.usertype.EnhancedUserType;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalTime;
 
+import java.io.Serializable;
+import java.sql.*;
+
 /**
  * Persist {@link org.joda.time.LocalDate} via hibernate.
  * This uses a simple integer to store the time as milliseconds since 1970-1-1.
  * The milliseconds will survive.
- * 
+ *
  * @author Mario Ivankovits (mario@ops.co.at)
  */
 public class PersistentLocalTimeAsTime implements EnhancedUserType, Serializable {
 
     public static final PersistentLocalTimeAsTime INSTANCE = new PersistentLocalTimeAsTime();
 
-    private static final int[] SQL_TYPES = new int[] { Types.TIME, };
+    private static final int[] SQL_TYPES = new int[]{Types.TIME,};
 
     public int[] sqlTypes() {
         return SQL_TYPES;
@@ -65,13 +62,14 @@ public class PersistentLocalTimeAsTime implements EnhancedUserType, Serializable
         return object.hashCode();
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] strings, Object object) throws HibernateException, SQLException {
-        return nullSafeGet(resultSet, strings[0]);
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor, Object object) throws HibernateException, SQLException {
+        return nullSafeGet(resultSet, strings[0], sessionImplementor);
 
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String string) throws SQLException {
-        Object timestamp = StandardBasicTypes.TIME.nullSafeGet(resultSet, string);
+    public Object nullSafeGet(ResultSet resultSet, String string, SessionImplementor sessionImplementor) throws SQLException {
+        Object timestamp = StandardBasicTypes.TIME.nullSafeGet(resultSet, string, sessionImplementor);
         if (timestamp == null) {
             return null;
         }
@@ -79,13 +77,14 @@ public class PersistentLocalTimeAsTime implements EnhancedUserType, Serializable
         return new LocalTime(timestamp, DateTimeZone.UTC);
     }
 
-    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+    @Override
+    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
-            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, null, index);
+            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, null, index, sessionImplementor);
         } else {
             LocalTime lt = ((LocalTime) value);
             Time time = new Time(lt.getMillisOfDay());
-            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, time, index);
+            StandardBasicTypes.TIME.nullSafeSet(preparedStatement, time, index, sessionImplementor);
         }
     }
 

@@ -15,27 +15,28 @@
  */
 package org.joda.time.contrib.hibernate;
 
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.type.StandardBasicTypes;
+import org.hibernate.usertype.EnhancedUserType;
+import org.joda.time.Instant;
+
 import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.HibernateException;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.usertype.EnhancedUserType;
-import org.joda.time.Instant;
-
 /**
  * Persist {@link org.joda.time.Instant} via hibernate as a BIGINT.
- * 
+ *
  * @author Martin Grove (marting@optrak.co.uk))
  */
 public class PersistentInstantAsBigInt implements EnhancedUserType, Serializable {
 
     public static final PersistentInstantAsBigInt INSTANCE = new PersistentInstantAsBigInt();
 
-    private static final int[] SQL_TYPES = new int[] { Types.BIGINT };
+    private static final int[] SQL_TYPES = new int[]{Types.BIGINT};
 
     public int[] sqlTypes() {
         return SQL_TYPES;
@@ -61,23 +62,25 @@ public class PersistentInstantAsBigInt implements EnhancedUserType, Serializable
         return object.hashCode();
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] names, Object object) throws HibernateException, SQLException {
-        return nullSafeGet(resultSet, names[0]);
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] names, SessionImplementor sessionImplementor, Object object) throws HibernateException, SQLException {
+        return nullSafeGet(resultSet, names[0], sessionImplementor);
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String name) throws HibernateException, SQLException {
-        Object value = StandardBasicTypes.LONG.nullSafeGet(resultSet, name);
+    public Object nullSafeGet(ResultSet resultSet, String name, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
+        Object value = StandardBasicTypes.LONG.nullSafeGet(resultSet, name, sessionImplementor);
         if (value == null) {
             return null;
         }
         return new Instant(value);
     }
 
-    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+    @Override
+    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
-            StandardBasicTypes.LONG.nullSafeSet(preparedStatement, null, index);
+            StandardBasicTypes.LONG.nullSafeSet(preparedStatement, null, index, sessionImplementor);
         } else {
-            StandardBasicTypes.LONG.nullSafeSet(preparedStatement, new Long(((Instant) value).getMillis()), index);
+            StandardBasicTypes.LONG.nullSafeSet(preparedStatement, new Long(((Instant) value).getMillis()), index, sessionImplementor);
         }
     }
 

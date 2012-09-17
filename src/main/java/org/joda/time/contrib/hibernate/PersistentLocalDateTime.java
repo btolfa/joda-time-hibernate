@@ -15,27 +15,28 @@
  */
 package org.joda.time.contrib.hibernate;
 
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.type.StandardBasicTypes;
+import org.hibernate.usertype.EnhancedUserType;
+import org.joda.time.LocalDateTime;
+
 import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.HibernateException;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.usertype.EnhancedUserType;
-import org.joda.time.LocalDateTime;
-
 /**
  * Persist {@link org.joda.time.LocalDateTime} via hibernate.
- * 
+ *
  * @author Mario Ivankovits (mario@ops.co.at)
  */
 public class PersistentLocalDateTime implements EnhancedUserType, Serializable {
 
     public static final PersistentLocalDateTime INSTANCE = new PersistentLocalDateTime();
 
-    private static final int[] SQL_TYPES = new int[] { Types.TIMESTAMP, };
+    private static final int[] SQL_TYPES = new int[]{Types.TIMESTAMP,};
 
     public int[] sqlTypes() {
         return SQL_TYPES;
@@ -61,23 +62,25 @@ public class PersistentLocalDateTime implements EnhancedUserType, Serializable {
         return object.hashCode();
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] strings, Object object) throws HibernateException, SQLException {
-        return nullSafeGet(resultSet, strings[0]);
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor, Object object) throws HibernateException, SQLException {
+        return nullSafeGet(resultSet, strings[0], sessionImplementor);
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String string) throws SQLException {
-        Object timestamp = StandardBasicTypes.TIMESTAMP.nullSafeGet(resultSet, string);
+    public Object nullSafeGet(ResultSet resultSet, String string, SessionImplementor sessionImplementor) throws SQLException {
+        Object timestamp = StandardBasicTypes.TIMESTAMP.nullSafeGet(resultSet, string, sessionImplementor);
         if (timestamp == null) {
             return null;
         }
         return new LocalDateTime(timestamp);
     }
 
-    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+    @Override
+    public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, null, index);
+            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, null, index, sessionImplementor);
         } else {
-            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, ((LocalDateTime) value).toDateTime().toDate(), index);
+            StandardBasicTypes.TIMESTAMP.nullSafeSet(preparedStatement, ((LocalDateTime) value).toDateTime().toDate(), index, sessionImplementor);
         }
     }
 

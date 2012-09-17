@@ -15,6 +15,12 @@
  */
 package org.joda.time.contrib.hibernate;
 
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.type.StandardBasicTypes;
+import org.hibernate.usertype.UserType;
+import org.joda.time.Duration;
+
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
@@ -22,20 +28,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.HibernateException;
-import org.hibernate.type.StandardBasicTypes;
-import org.hibernate.usertype.UserType;
-import org.joda.time.Duration;
-
 /**
  * Converts a org.joda.time.Duration to and from Sql for Hibernate. It simply
  * stores the milliseconds as a bigint.
- * 
+ *
  * @author Daniel Jurado (jurado@gmail.com)
  */
 public class PersistentDurationAsMilliseconds implements UserType, Serializable {
 
-    private static final int[] SQL_TYPES = new int[] { Types.BIGINT };
+    private static final int[] SQL_TYPES = new int[]{Types.BIGINT};
 
     public Class returnedClass() {
         return Duration.class;
@@ -45,10 +46,11 @@ public class PersistentDurationAsMilliseconds implements UserType, Serializable 
         return SQL_TYPES;
     }
 
-    public Object nullSafeGet(ResultSet resultSet, String[] strings,
-            Object object) throws HibernateException, SQLException {
+    @Override
+    public Object nullSafeGet(ResultSet resultSet, String[] strings, SessionImplementor sessionImplementor,
+                              Object object) throws HibernateException, SQLException {
         BigInteger b = (BigInteger) StandardBasicTypes.BIG_INTEGER.nullSafeGet(
-                resultSet, strings[0]);
+                resultSet, strings[0], sessionImplementor);
         if (b == null) {
             return null;
         }
@@ -56,14 +58,15 @@ public class PersistentDurationAsMilliseconds implements UserType, Serializable 
         return new Duration(b.longValue());
     }
 
+    @Override
     public void nullSafeSet(PreparedStatement preparedStatement, Object value,
-            int index) throws HibernateException, SQLException {
+                            int index, SessionImplementor sessionImplementor) throws HibernateException, SQLException {
         if (value == null) {
             StandardBasicTypes.BIG_INTEGER.nullSafeSet(preparedStatement, null,
-                    index);
+                    index, sessionImplementor);
         } else {
             StandardBasicTypes.BIG_INTEGER.nullSafeSet(preparedStatement,
-                    BigInteger.valueOf((Long) value), index);
+                    BigInteger.valueOf((Long) value), index, sessionImplementor);
         }
     }
 

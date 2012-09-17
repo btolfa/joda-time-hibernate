@@ -15,19 +15,19 @@
  */
 package org.joda.time.contrib.hibernate;
 
-import java.io.Serializable;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-
 import org.hibernate.HibernateException;
-import org.hibernate.engine.SessionImplementor;
+import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.type.Type;
 import org.hibernate.usertype.CompositeUserType;
 import org.joda.time.DateTime;
 import org.joda.time.Interval;
+
+import java.io.Serializable;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 
 /**
  * Persist {@link org.joda.time.Interval} via hibernate. Internally, this class
@@ -39,14 +39,14 @@ import org.joda.time.Interval;
  * <blockquote>
  * "from Foo where :date is between barInterval.start and barInterval.end"
  * </blockquote>
- * 
+ *
  * @author Christopher R. Gardner (chris_gardner76@yahoo.com)
  */
 public class PersistentInterval implements CompositeUserType, Serializable {
 
-    private static final String[] PROPERTY_NAMES = new String[] { "start", "end" };
+    private static final String[] PROPERTY_NAMES = new String[]{"start", "end"};
 
-    private static final Type[] TYPES = new Type[] { StandardBasicTypes.TIMESTAMP, StandardBasicTypes.TIMESTAMP };
+    private static final Type[] TYPES = new Type[]{StandardBasicTypes.TIMESTAMP, StandardBasicTypes.TIMESTAMP};
 
     public Object assemble(Serializable cached, SessionImplementor session, Object owner) throws HibernateException {
         return cached;
@@ -91,20 +91,22 @@ public class PersistentInterval implements CompositeUserType, Serializable {
         return false;
     }
 
+    @Override
     public Object nullSafeGet(ResultSet resultSet, String[] names, SessionImplementor session, Object owner)
             throws HibernateException, SQLException {
         if (resultSet == null) {
             return null;
         }
         PersistentDateTime pst = new PersistentDateTime();
-        DateTime start = (DateTime) pst.nullSafeGet(resultSet, names[0]);
-        DateTime end = (DateTime) pst.nullSafeGet(resultSet, names[1]);
+        DateTime start = (DateTime) pst.nullSafeGet(resultSet, names[0], session);
+        DateTime end = (DateTime) pst.nullSafeGet(resultSet, names[1], session);
         if (start == null || end == null) {
             return null;
         }
         return new Interval(start, end);
     }
 
+    @Override
     public void nullSafeSet(PreparedStatement statement, Object value, int index, SessionImplementor session)
             throws HibernateException, SQLException {
         if (value == null) {

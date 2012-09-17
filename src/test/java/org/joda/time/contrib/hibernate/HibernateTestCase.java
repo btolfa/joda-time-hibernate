@@ -19,11 +19,13 @@ import junit.framework.TestCase;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.dialect.HSQLDialect;
+import org.hibernate.jdbc.Work;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.service.ServiceRegistryBuilder;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 public abstract class HibernateTestCase extends TestCase {
@@ -59,16 +61,17 @@ public abstract class HibernateTestCase extends TestCase {
 
     protected void tearDown() throws Exception {
         final String[] dropSQLs = cfg.generateDropSchemaScript(new HSQLDialect());
-        final Connection connection = getSessionFactory().openSession().connection();
-        try {
-            Statement stmt = connection.createStatement();
-            for (int i = 0; i < dropSQLs.length; i++) {
-                //System.out.println("dropSQLs[i] = " + dropSQLs[i]);
-                stmt.executeUpdate(dropSQLs[i]);
+
+        getSessionFactory().openSession().doWork(new Work() {
+            @Override
+            public void execute(Connection connection) throws SQLException {
+                Statement stmt = connection.createStatement();
+                for (String dropSQL : dropSQLs) {
+                    //System.out.println("dropSQLs[i] = " + dropSQL);
+                    stmt.executeUpdate(dropSQL);
+                }
             }
-        } finally {
-            connection.close();
-        }
+        });
 
         if (this.factory != null) {
             this.factory.close();
